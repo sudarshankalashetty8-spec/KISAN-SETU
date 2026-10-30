@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Admin Voice Messages{% endblock %}
+{% block content %}
+<section class="dashboard-head admin-head">
+  <div><span class="eyebrow">KisanSetu • Voice Connect</span><h1>Farmer Voice Messages 🎧</h1>
+  <p>Listen to farmer recordings and reply with a voice message. Replies appear in the farmer's Voice Connect page.</p></div>
+  <a class="btn secondary" href="{{ url_for('admin') }}">Back to admin dashboard</a>
+</section>
+<section class="panel">
+  <div class="panel-title"><h2>Voice inbox</h2><span>📥</span></div>
+  {% for message in messages %}
+  <article class="admin-voice-card">
+    <div class="voice-thread-head">
+      <div><strong>🎙️ Message #{{ message['id'] }} · {{ message['farmer_name'] }}</strong>
+      <p class="muted">{{ message['farmer_phone'] }} · {{ message['farmer_village'] }}</p></div>
+      <span class="badge {{ 'paid' if message['status'] == 'Replied' else '' }}">{{ message['status'] }}</span>
+    </div>
+    <small>Submitted {{ message['created_at'][:16].replace('T', ' ') }} · Language: {{ supported_languages.get(message['language'], message['language']) }}</small>
+    <audio controls preload="none" src="{{ url_for('play_voice_audio', message_id=message['id']) }}"></audio>
+    {% for reply in replies_by_parent.get(message['id'], []) %}
+      <div class="voice-reply">
+        <strong>🔊 Previous admin reply #{{ reply['id'] }}</strong><small>{{ reply['created_at'][:16].replace('T', ' ') }}</small>
+        <audio controls preload="none" src="{{ url_for('play_voice_audio', message_id=reply['id']) }}"></audio>
+      </div>
+    {% endfor %}
+    <details class="voice-reply-form">
+      <summary>🎤 Record and send a voice reply</summary>
+      <div class="voice-reply-inner">
+        <label for="adminLang{{ message['id'] }}">Reply language</label>
+        <select id="adminLang{{ message['id'] }}" class="voice-select">
+          {% for code, name in supported_languages.items() %}
+          <option value="{{ code }}" {% if current_language == code %}selected{% endif %}>{{ name }}</option>
+          {% endfor %}
+        </select>
+        <div class="voice-controls">
+          <button type="button" class="btn primary" data-start="{{ message['id'] }}">● Start recording</button>
+          <button type="button" class="btn secondary" data-stop="{{ message['id'] }}" disabled>■ Stop</button>
+        </div>
+        <p class="voice-status" id="status{{ message['id'] }}" role="status">Ready to record a reply.</p>
+        <audio id="preview{{ message['id'] }}" controls hidden></audio>
+        <form method="post" enctype="multipart/form-data" action="{{ url_for('admin_voice_messages') }}" data-form="{{ message['id'] }}">
+          <input type="hidden" name="parent_id" value="{{ message['id'] }}">
+          <input type="hidden" name="language" id="langValue{{ message['id'] }}" value="{{ current_language }}">
+          <input type="file" name="audio" id="file{{ message['id'] }}" accept="audio/*,.webm,.ogg,.m4a,.mp3,.wav" required hidden>
+          <button type="submit" class="btn primary full" id="send{{ message['id'] }}" disabled>Send voice reply to farmer</button>
+        </form>
+      </div>
+    </details>
+  </article>
+  {% else %}
+  <p class="empty">No farmer voice messages yet. New farmer recordings will appear here.</p>
+  {% endfor %}
+</section>
+<script>
+(() => {
+  const active = {};
+  function setup(id) {
+    const start = document.querySelector('[data-start="' + id + '"]');
+    const stop = document.querySelector('[data-stop="' + id + '"]');
+    const status = document.getElementById('status' + id);
+    const preview = document.getElementById('preview' + id);
+    const fileInput = document.getElementById('file' + id);
+    const send = document.getElementById('send' + id);
+    const language = document.getElementById('adminLang' + id);
+    const languageValue = document.getElementById('langValue' + id);
+    const form = document.querySelector('[data-form="' + id + '"]');
+    let recorder, stream, chunks = [], previewUrl = null, durationTimer = null;
+    language.addEventListener('change', () => languageValue.value = language.value);
+    start.addEventListener('click', async () => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+        status.textContent = 'Recording is not supported by this browser. Try a current Chrome, Edge, or Firefox browser.';
+        return;
+      }
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({audio: true});
+        chunks = [];
+        let options = {};
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) options.mimeType = 'audio/webm;codecs=opus';
+        else if (MediaRecorder.isTypeSupported('audio/webm')) options.mimeType = 'audio/webm';
+        recorder = new MediaRecorder(stream, options);
+        recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+        recorder.onstop = () => {
+          clearTimeout(durationTimer);
+          stream.getTracks().forEach(track => track.stop());
+          const blob = new Blob(chunks, {type: recorder.mimeType || 'audio/webm'});
+          if (blob.size > 10 * 1024 * 1024) { status.textContent = 'Recording is over 10 MB. Record a shorter reply.'; send.disabled = true; return; }
+          const ext = blob.type.includes('ogg') ? 'ogg' : blob.type.includes('mp4') ? 'm4a' : blob.type.includes('wav') ? 'wav' : 'webm';
+          const file = new File([blob], 'admin-reply.' + ext, {type: blob.type});
+          const transfer = new DataTransfer(); transfer.items.add(file); fileInput.files = transfer.files;
+          if (previewUrl) URL.revokeObjectURL(previewUrl);
+          previewUrl = URL.createObjectURL(blob); preview.src = previewUrl; preview.hidden = false;
+          send.disabled = false; status.textContent = 'Reply ready. Listen to it, then send to the farmer.';
+        };
+        recorder.start(); start.disabled = true; stop.disabled = false; send.disabled = true;
+        status.textContent = 'Recording reply… Maximum time is 2 minutes.';
+        durationTimer = setTimeout(() => { if (recorder && recorder.state === 'recording') recorder.stop(); start.disabled = false; stop.disabled = true; }, 120000);
+      } catch (err) {
+        status.textContent = 'Microphone permission was denied or no microphone was found.';
+      }
+    });
+    stop.addEventListener('click', () => { if (recorder && recorder.state === 'recording') recorder.stop(); start.disabled = false; stop.disabled = true; });
+    form.addEventListener('submit', e => {
+      languageValue.value = language.value;
+      if (!fileInput.files.length) { e.preventDefault(); status.textContent = 'Record a voice reply before sending.'; }
+      else { send.disabled = true; send.textContent = 'Sending…'; }
+    });
+  }
+  document.querySelectorAll('[data-start]').forEach(button => setup(button.dataset.start));
+})();
+</script>
+{% endblock %}

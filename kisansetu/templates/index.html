@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% block title %}KisanSetu | {{ t('smart_procurement') }}
+{% endblock %}{% block content %}
+<section class="hero"><div class="hero-content">
+<span class="eyebrow">{{ t('smart_farmer_system') }}</span><h1>{{ t('less_waiting') }}<br><span>{{ t('more_farming') }}</span></h1>
+<p>{{ t('hero_desc') }}</p><div class="hero-buttons"><a class="btn primary" href="{{ url_for('register') }}">{{ t('register_farmer') }}</a><a class="btn secondary" href="{{ url_for('login') }}">{{ t('farmer_login') }}</a></div>
+<div class="hero-stats"><div><b>01</b><span>{{ t('register') }}</span></div><div><b>02</b><span>{{ t('book') }}</span></div><div><b>03</b><span>{{ t('track') }}</span></div><div><b>04</b><span>{{ t('paid') }}</span></div></div>
+</div><div class="hero-art hero-photo" role="img" aria-label="Indian farmer sowing seeds in a golden field"><img src="{{ url_for('static', filename='images/farmer-hero.jpg') }}" alt="Indian farmer sowing seeds in a golden field"></div></section>
+<section class="section"><div class="section-heading"><span class="eyebrow">{{ t('why_kisansetu') }}</span><h2>{{ t('everything_farmer_needs') }}</h2></div><div class="feature-grid">
+<article class="feature-card"><div class="feature-icon">🧑‍🌾</div><h3>{{ t('farmer_registration_title') }}</h3><p>{{ t('farmer_registration_desc') }}</p></article>
+<article class="feature-card"><div class="feature-icon">📅</div><h3>{{ t('slot_booking') }}</h3><p>{{ t('slot_booking_desc') }}</p></article>
+<article class="feature-card"><div class="feature-icon">📍</div><h3>{{ t('real_time_queue') }}</h3><p>{{ t('real_time_queue_desc') }}</p></article>
+<article class="feature-card"><div class="feature-icon">🔔</div><h3>{{ t('notifications') }}</h3><p>{{ t('notifications_desc') }}</p></article>
+<article class="feature-card"><div class="feature-icon">💰</div><h3>{{ t('payment_tracking') }}</h3><p>{{ t('payment_tracking_desc') }}</p></article>
+<article class="feature-card"><div class="feature-icon">⏱️</div><h3>{{ t('less_waiting_title') }}</h3><p>{{ t('less_waiting_desc') }}</p></article>
+</div></section>
+<section class="process"><div><span class="eyebrow">{{ t('how_it_works') }}</span><h2>{{ t('four_steps') }}</h2></div><div class="process-list">
+<div><span>1</span><b>{{ t('register') }}</b><p>{{ t('register_step_desc') }}</p></div><div><span>2</span><b>{{ t('book') }}</b><p>{{ t('book_step_desc') }}</p></div><div><span>3</span><b>{{ t('visit_centre') }}</b><p>{{ t('visit_centre_desc') }}</p></div><div><span>4</span><b>{{ t('track_payment') }}</b><p>{{ t('track_payment_desc') }}</p></div>
+</div></section>
+
+{% endblock %}

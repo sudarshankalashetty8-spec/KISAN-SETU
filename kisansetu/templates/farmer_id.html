@@ -1,0 +1,3 @@
+{% extends "base.html" %}{% block title %}Farmer ID | KisanSetu{% endblock %}{% block content %}
+<section class="dashboard-head"><div><span class="eyebrow">DIGITAL FARMER ID</span><h1>🪪 Your KisanSetu Farmer ID</h1><p>Show this card at the procurement centre for quick reference.</p></div></section>
+<section class="panel farmer-id-card"><div><span class="eyebrow">KISANSETU • FARMER CARD</span><h2>{{ farmer['name'] }}</h2><p><strong>Farmer ID:</strong> KS-F{{ '%05d'|format(farmer['id']) }}</p><p><strong>Village:</strong> {{ farmer['village'] }}</p><p><strong>Registered crop:</strong> {{ crop_label(farmer['crop']) }}</p><p><strong>Mobile:</strong> {{ farmer['phone'] }}</p><p><strong>Member since:</strong> {{ farmer['created_at'][:10] }}</p></div></section>{% endblock %}

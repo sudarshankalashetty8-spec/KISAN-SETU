@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ t('contact_us') }} | KisanSetu{% endblock %}
+{% block content %}
+<section class="contact-section contact-page">
+  <div class="contact-hero">
+    <span class="eyebrow">{{ t('contact_us') }}</span>
+    <h2>{{ t('contact_us') }}</h2>
+    <p>{{ t('get_in_touch') }}</p>
+  </div>
+
+  <div class="contact-card-main">
+    <h3>{{ t('contact_information') }}</h3>
+
+    <div class="contact-detail">
+      <div class="contact-detail-icon">👥</div>
+      <div><span>{{ t('admin_name') }}</span><p><strong>Sudarshan N Kalashetty</strong><br><strong>Vinayashree J Wali</strong></p></div>
+    </div>
+
+    <div class="contact-detail">
+      <div class="contact-detail-icon">📍</div>
+      <div><span>{{ t('address') }}</span><p>Sharnbasava University Gulbarga<br>Karnataka, India</p></div>
+    </div>
+
+    <div class="contact-detail">
+      <div class="contact-detail-icon">✉</div>
+      <div><span>{{ t('email') }}</span><p><a href="mailto:sudarshankalashetty8@gmail.com">sudarshankalashetty8@gmail.com</a></p></div>
+    </div>
+
+    <div class="contact-detail">
+      <div class="contact-detail-icon">☎</div>
+      <div><span>{{ t('phone') }}</span><p><a href="tel:+918861238575">+91 8861238575</a><br><a href="tel:+917019104379">+91 7019104379</a></p></div>
+    </div>
+
+    <div class="contact-detail contact-instagram">
+      <div class="contact-detail-icon instagram-symbol">◎</div>
+      <div><span>{{ t('follow_us_instagram') }}</span><p><a href="https://www.instagram.com/kalashetty_o7?stkn=eHVxYmthcTRxOHE4&utm_source=qr" target="_blank" rel="noopener noreferrer"><strong>Instagram</strong><br>@kalashetty_o7</a></p></div>
+    </div>
+  </div>
+</section>
+{% endblock %}

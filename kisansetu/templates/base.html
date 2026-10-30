@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="{{ current_language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ t('smart_procurement') }}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        window.KISANSETU_I18N = {{ translations_for_js|tojson }};
+        window.KISANSETU_EN = {{ translations_en_for_js|tojson }};
+        window.KISANSETU_LANG = {{ current_language|tojson }};
+    </script>
+    <script defer src="{{ url_for('static', filename='js/app.js') }}"></script>
+</head>
+<body>
+<header class="navbar">
+    <div class="brand">
+        <div class="brand-icon">🌾</div>
+        <div><strong>KisanSetu</strong><span>{{ t('smart_procurement') }}</span></div>
+    </div>
+    <nav>
+        <a href="{{ url_for('home') }}">{{ t('home') }}</a>
+        {% if session.get('farmer_id') %}
+            <a href="{{ url_for('dashboard') }}">{{ t('dashboard') }}</a>
+            <a href="{{ url_for('book_slot') }}">{{ t('book_slot') }}</a>
+            <a href="{{ url_for('queue') }}">{{ t('live_queue') }}</a>
+            <a href="{{ url_for('farmer_voice_messages') }}">🎙️ {{ t('voice_connect') }}</a>
+            <a href="{{ url_for('payment_tracker') }}">💰 {{ t('payments') }}</a>
+            <a href="{{ url_for('crop_prices') }}">🌾 {{ t('crop_prices') }}</a>
+            <a href="{{ url_for('price_bargaining') }}">🤝 {{ t('bargain') }}</a>
+            <a href="{{ url_for('logout') }}" class="nav-btn">{{ t('logout') }}</a>
+        {% elif session.get('admin_logged_in') %}
+            <a href="{{ url_for('admin') }}">{{ t('dashboard') }}</a>
+            <a href="{{ url_for('admin_voice_messages') }}">🎧 {{ t('voice_messages') }}</a>
+            <a href="{{ url_for('crop_prices') }}">🌾 {{ t('crop_prices') }}</a>
+            <a href="{{ url_for('price_bargaining') }}">🤝 {{ t('bargaining') }}</a>
+            <a href="{{ url_for('admin_logout') }}" class="nav-btn">{{ t('admin_logout') }}</a>
+        {% else %}
+            <a href="{{ url_for('login') }}">{{ t('login') }}</a>
+            <a href="{{ url_for('register') }}" class="nav-btn">{{ t('farmer_registration') }}</a>
+        {% endif %}
+        <a href="{{ url_for('contact') }}">{{ t('contact_us') }}</a>
+        <label class="language-box" title="{{ t('language') }}">
+            <span>🌐</span>
+            <select id="languageSelect" aria-label="{{ t('language') }}">
+                {% for code, name in supported_languages.items() %}
+                    <option value="{{ code }}" {% if current_language == code %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+    </nav>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-wrap">
+        {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+    </div>
+    {% endif %}
+{% endwith %}
+
+{% block content %}{% endblock %}
+
+<footer>
+    <div><strong>🌾 KisanSetu</strong><p>{{ t('footer_desc') }}</p></div>
+    <div><p>{{ t('footer_features') }}</p></div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Kisan Voice Connect{% endblock %}
+{% block content %}
+<section class="dashboard-head">
+  <div><span class="eyebrow">KisanSetu • Voice Connect</span><h1>Speak to the procurement admin 🎙️</h1>
+  <p>Record a voice message in your preferred language. The admin can listen and reply with a voice message.</p></div>
+</section>
+<section class="voice-layout">
+  <div class="panel voice-compose">
+    <div class="panel-title"><h2>Record a new message</h2><span>🎙️</span></div>
+    <p class="muted">Allow microphone access when your browser asks. Keep your recording under 2 minutes and 10 MB.</p>
+    <label for="voiceLanguage">Message language</label>
+    <select id="voiceLanguage" class="voice-select">
+      {% for code, name in supported_languages.items() %}
+      <option value="{{ code }}" {% if current_language == code %}selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+    <div class="voice-controls">
+      <button type="button" class="btn primary" id="startRecording">● Start recording</button>
+      <button type="button" class="btn secondary" id="stopRecording" disabled>■ Stop</button>
+    </div>
+    <p id="recordingStatus" class="voice-status" role="status" aria-live="polite">Ready when you are.</p>
+    <audio id="recordingPreview" controls hidden></audio>
+    <form id="voiceUploadForm" method="post" enctype="multipart/form-data" action="{{ url_for('farmer_voice_messages') }}">
+      <input type="file" name="audio" id="voiceFile" accept="audio/*,.webm,.ogg,.m4a,.mp3,.wav" required hidden>
+      <input type="hidden" name="language" id="voiceLanguageValue" value="{{ current_language }}">
+      <button type="submit" class="btn primary full" id="sendVoice" disabled>Send voice message to admin</button>
+    </form>
+    <p class="voice-privacy">🔒 Your audio is private and can only be accessed by you and the authorized admin.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-title"><h2>My voice messages</h2><span>💬</span></div>
+    {% for message in messages %}
+      {% if message['sender_type'] == 'farmer' %}
+      <article class="voice-thread">
+        <div class="voice-thread-head"><strong>🎙️ Your message #{{ message['id'] }}</strong><span class="badge">{{ message['status'] }}</span></div>
+        <small>{{ message['created_at'][:16].replace('T', ' ') }} · {{ supported_languages.get(message['language'], message['language']) }}</small>
+        <audio controls preload="none" src="{{ url_for('play_voice_audio', message_id=message['id']) }}"></audio>
+        {% for reply in messages %}
+          {% if reply['sender_type'] == 'admin' and reply['parent_id'] == message['id'] %}
+          <div class="voice-reply">
+            <strong>🎧 Admin voice reply</strong><small>{{ reply['created_at'][:16].replace('T', ' ') }}</small>
+            <audio controls preload="none" src="{{ url_for('play_voice_audio', message_id=reply['id']) }}"></audio>
+          </div>
+          {% endif %}
+        {% endfor %}
+      </article>
+      {% endif %}
+    {% else %}
+      <p class="empty">You haven't sent a voice message yet.</p>
+    {% endfor %}
+    {% if not messages %}<p class="empty">Your messages and admin replies will appear here.</p>{% endif %}
+  </div>
+</section>
+<script>
+(() => {
+  const startBtn = document.getElementById('startRecording');
+  const stopBtn = document.getElementById('stopRecording');
+  const sendBtn = document.getElementById('sendVoice');
+  const status = document.getElementById('recordingStatus');
+  const preview = document.getElementById('recordingPreview');
+  const fileInput = document.getElementById('voiceFile');
+  const language = document.getElementById('voiceLanguage');
+  const languageValue = document.getElementById('voiceLanguageValue');
+  const form = document.getElementById('voiceUploadForm');
+  let recorder, stream, chunks = [], previewUrl = null, durationTimer = null;
+  language.addEventListener('change', () => languageValue.value = language.value);
+  startBtn.addEventListener('click', async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+      status.textContent = 'Voice recording is not supported in this browser. Try an updated Chrome, Edge, or Firefox browser.';
+      return;
+    }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({audio: true});
+      chunks = [];
+      let options = {};
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) options.mimeType = 'audio/webm;codecs=opus';
+      else if (MediaRecorder.isTypeSupported('audio/webm')) options.mimeType = 'audio/webm';
+      recorder = new MediaRecorder(stream, options);
+      recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+      recorder.onstop = () => {
+        clearTimeout(durationTimer);
+        stream.getTracks().forEach(track => track.stop());
+        const blob = new Blob(chunks, {type: recorder.mimeType || 'audio/webm'});
+        if (blob.size > 10 * 1024 * 1024) {
+          status.textContent = 'Recording exceeds 10 MB. Please record a shorter message.';
+          sendBtn.disabled = true;
+          return;
+        }
+        const ext = (blob.type.includes('ogg') ? 'ogg' : blob.type.includes('mp4') ? 'm4a' : blob.type.includes('wav') ? 'wav' : 'webm');
+        const file = new File([blob], 'farmer-voice.' + ext, {type: blob.type});
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        fileInput.files = transfer.files;
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        previewUrl = URL.createObjectURL(blob);
+        preview.src = previewUrl;
+        preview.hidden = false;
+        sendBtn.disabled = false;
+        status.textContent = 'Recording ready. Listen to it below, then send it to the admin.';
+      };
+      recorder.start();
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+      sendBtn.disabled = true;
+      status.textContent = 'Recording… Speak clearly. Maximum recording time is 2 minutes.';
+      durationTimer = setTimeout(() => { if (recorder && recorder.state === 'recording') recorder.stop(); startBtn.disabled = false; stopBtn.disabled = true; }, 120000);
+    } catch (err) {
+      status.textContent = 'Microphone permission was denied or no microphone was found. Allow microphone access and try again.';
+    }
+  });
+  stopBtn.addEventListener('click', () => {
+    if (recorder && recorder.state === 'recording') recorder.stop();
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+  });
+  form.addEventListener('submit', e => {
+    languageValue.value = language.value;
+    if (!fileInput.files.length) { e.preventDefault(); status.textContent = 'Please record a message before sending.'; }
+    else { sendBtn.disabled = true; sendBtn.textContent = 'Sending…'; }
+  });
+})();
+</script>
+{% endblock %}
