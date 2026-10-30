@@ -59,8 +59,6 @@ The SQLite database `procurement.db` is created automatically.
 ## Dependency note
 The QR image generator is included in `requirements.txt` (`qrcode[pil]`). After updating the project, run `pip install -r requirements.txt` again before starting the app.
 
-
-
 ## Recent updates
 - Removed the QR code Farmer ID feature and its navigation link; the ordinary farmer ID card remains available internally.
 - Added editable starter crop reference prices for 30 crops. The displayed Kishan Setu rate is calculated as market reference price minus ₹20 per quintal.
